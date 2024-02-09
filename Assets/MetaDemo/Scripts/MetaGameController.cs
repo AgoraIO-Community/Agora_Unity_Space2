@@ -78,6 +78,21 @@ namespace Agora.Demo.Meta.Controller
             return new Vector3(randXY.x * 5, YPos, randXY.y);
         }
 
+        void EnableCameraFollow(bool enable, Transform trans)
+        {
+            FollowCharacter follow = Camera.main.GetComponent<FollowCharacter>();
+            if (follow == null) return;
+            if (enable)
+            {
+                follow.character = trans;
+            }
+            else
+            {
+                follow.character = null;
+            }
+        }
+
+
         public bool HasPlayer(string name)
         {
             return SyncManager.HasPlayer(name);
@@ -101,6 +116,7 @@ namespace Agora.Demo.Meta.Controller
                 ava.AddComponent<PlayerController>();
                 sync.UserID = name;
                 _myAvatar = ava.transform;
+                EnableCameraFollow(true, _myAvatar);
             }
             else
             {
