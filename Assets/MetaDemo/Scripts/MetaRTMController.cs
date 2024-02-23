@@ -2,6 +2,7 @@ using io.agora.rtm.demo;
 using Agora.Rtm;
 using UnityEngine;
 using System.Threading.Tasks;
+using Agora.Spaces;
 
 namespace Agora.Demo.Meta.Controller
 {
@@ -18,7 +19,9 @@ namespace Agora.Demo.Meta.Controller
         public static MetaRTMController Instance;
 
         bool _inTransformSyncTopic = false;
+
         string UserID;
+        string ChannelName;
 
         MetaGameController GameController;
         public event System.Action OnLoginComplete;
@@ -47,7 +50,8 @@ namespace Agora.Demo.Meta.Controller
         public async void InitClient(MetaGameController game)
         {
             GameController = game;
-            UserID = GameController.GetUserName();
+            UserID = GameApplication.Instance.UserName;
+            ChannelName = GameApplication.Instance.ChannelName;
 
             RtmConfig config = new RtmConfig();
             config.appId = InfoInput.appID;
@@ -82,7 +86,7 @@ namespace Agora.Demo.Meta.Controller
                 _rtmClient = rtmClient;
                 _presence = _rtmClient.GetPresence();
                 await LoginAsync();
-                InitStreamChannel(InfoInput.channelName);
+                InitStreamChannel(ChannelName);
             }
         }
 
@@ -199,7 +203,7 @@ namespace Agora.Demo.Meta.Controller
         public async void PublishTransformState(string json)
         {
             StateItem posItem = new StateItem { key = "TransformData", value = json };
-            await _presence?.SetStateAsync(InfoInput.channelName, RTM_CHANNEL_TYPE.STREAM,
+            await _presence?.SetStateAsync(ChannelName, RTM_CHANNEL_TYPE.STREAM,
                 new StateItem[] { posItem }
             );
         }
@@ -307,7 +311,7 @@ namespace Agora.Demo.Meta.Controller
               @event.channelName, @event.channelTopic, @event.channelType, @event.publisher, @event.message.GetData<string>(), @event.customType);
             //            Debug.Log(str);
 
-            if (@event.channelName == InfoInput.channelName && @event.channelTopic == TransformTopic)
+            if (@event.channelName == ChannelName && @event.channelTopic == TransformTopic)
             {
                 if (@event.customType == "binary")
                 {
@@ -331,7 +335,7 @@ namespace Agora.Demo.Meta.Controller
             switch (@event.type)
             {
                 case RTM_PRESENCE_EVENT_TYPE.REMOTE_JOIN:
-                    if (@event.channelName == InfoInput.channelName)
+                    if (@event.channelName == ChannelName)
                     {
                         // subscribe to the newly added user. Original group didn't include them
                         // SubscribeTopic(TransformTopic);
@@ -421,7 +425,7 @@ namespace Agora.Demo.Meta.Controller
             RTM_CHANNEL_TYPE channelType = RTM_CHANNEL_TYPE.STREAM;
 
 
-            var result = await _presence.GetStateAsync(InfoInput.channelName, channelType, player);
+            var result = await _presence.GetStateAsync(ChannelName, channelType, player);
             if (result.Status.Error)
             {
                 Debug.LogError(string.Format("GetState Status.ErrorCode:{0} ", result.Status.ErrorCode));
@@ -449,13 +453,13 @@ namespace Agora.Demo.Meta.Controller
 
         async void GetPresenceUser(System.Action<UserState[]> processUsers)
         {
-            PresenceOptions options = new PresenceOptions()
+            GetOnlineUsersOptions options = new GetOnlineUsersOptions()
             {
                 includeUserId = true,
                 includeState = true,
             };
 
-            var result = await _presence.WhoNowAsync(InfoInput.channelName, RTM_CHANNEL_TYPE.STREAM, options);
+            var result = await _presence.GetOnlineUsersAsync(ChannelName, RTM_CHANNEL_TYPE.STREAM, options);
             if (result.Status.Error)
             {
                 Debug.LogError(string.Format("WhoNow Status.ErrorCode:{0} ", result.Status.ErrorCode));

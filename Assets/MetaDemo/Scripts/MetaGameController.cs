@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using Agora.Demo.Meta.Model;
+using Agora.Spaces;
 
 namespace Agora.Demo.Meta.Controller
 {
@@ -24,14 +25,12 @@ namespace Agora.Demo.Meta.Controller
 
         Transform _myAvatar;
         bool _exitSelfStateSync = false;
-        string EnvNameExtension = "";
 
         HashSet<string> SubscribeGroup = new HashSet<string>();
 
         private void Awake()
         {
-            EnvNameExtension = Environment.GetEnvironmentVariable("DEMONUM");
-            Debug.Log("EnvNameExtension = " + EnvNameExtension);
+            ;
             SyncManager = new PlayerSyncManager();
             _rtmController = GetComponent<MetaRTMController>();
         }
@@ -42,7 +41,7 @@ namespace Agora.Demo.Meta.Controller
             _rtmController.OnLoginComplete += () =>
             {
                 _exitSelfStateSync = false;
-                SpawnAvatar(GetUserName(), true);
+                SpawnAvatar(GameApplication.Instance.UserName, true);
                 StartCoroutine(nameof(CoSyncLocalStateTick));
             };
             _rtmController.OnJoinStreamChannel += () =>
@@ -61,14 +60,10 @@ namespace Agora.Demo.Meta.Controller
             };
         }
 
-        public string GetUserName()
-        {
-            return Application.platform.ToString() + EnvNameExtension;
-        }
 
         internal string GetLogName()
         {
-            return "rtm_" + GetUserName() + ".log";
+            return "rtm_" + GameApplication.Instance.UserName + ".log";
         }
 
         Vector3 GetSpawnPosition()
@@ -165,7 +160,7 @@ namespace Agora.Demo.Meta.Controller
             {
                 TransformData transformData = new TransformData(_myAvatar)
                 {
-                    UserId = GetUserName()
+                    UserId = GameApplication.Instance.UserName
                 };
                 string json = transformData.ToJSON();
                 //Debug.Log("CoSyncStateTick:" + json);
@@ -212,6 +207,7 @@ namespace Agora.Demo.Meta.Controller
         }
 
         #region TESTCODE
+#if TESTING
         void OnGUI()
         {
             GUILayout.Space(8);
@@ -243,6 +239,7 @@ namespace Agora.Demo.Meta.Controller
             TransformData data = new TransformData(game.transform) { UserId = "Sample" };
             return data;
         }
+#endif
         #endregion
     }
 }
