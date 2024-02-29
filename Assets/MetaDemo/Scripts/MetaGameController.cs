@@ -1,23 +1,27 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using Agora.Demo.Meta.Model;
-using Agora.Spaces;
 
-namespace Agora.Demo.Meta.Controller
+namespace Agora.Spaces.Controller
 {
+    /// <summary>
+    ///   The MetaGameController takes care of life cycles of the players as 
+    /// objects in the scene.
+    /// </summary>
     public class MetaGameController : MonoBehaviour
     {
         [SerializeField]
         GameObject AvatarPrefab;
+
         [SerializeField]
         Transform UsersRoot;
 
-        public PlayerSyncManager SyncManager { get; private set; }
+        internal PlayerSyncManager SyncManager { get; private set; }
 
-        MetaRTMController _rtmController;
+        internal MetaRTMController _rtmController;
+        internal MetaRTCController _rtcController;
 
         private float SyncFrequence = 0.5f; // half second
 
@@ -25,14 +29,15 @@ namespace Agora.Demo.Meta.Controller
 
         Transform _myAvatar;
         bool _exitSelfStateSync = false;
+        Vector3 _myInitPosition = Vector3.zero;
 
         HashSet<string> SubscribeGroup = new HashSet<string>();
 
         private void Awake()
         {
-            ;
             SyncManager = new PlayerSyncManager();
             _rtmController = GetComponent<MetaRTMController>();
+            _rtcController = GetComponent<MetaRTCController>();
         }
 
         private void Start()
@@ -47,6 +52,7 @@ namespace Agora.Demo.Meta.Controller
             _rtmController.OnJoinStreamChannel += () =>
             {
                 SendTransformData();
+                _rtcController.JoinChannel("", GameApplication.Instance.UserName, _myInitPosition);
             };
             _rtmController.OnLeaveStreamChannel += () =>
             {
@@ -104,9 +110,9 @@ namespace Agora.Demo.Meta.Controller
             Vector3 pos = GetSpawnPosition();
             GameObject ava = Instantiate(AvatarPrefab, pos, Quaternion.identity, UsersRoot);
             ava.name = name;
-
             if (owned)
             {
+                _myInitPosition = pos;
                 var sync = ava.AddComponent<TransformSynchronizer>();
                 ava.AddComponent<PlayerController>();
                 sync.UserID = name;

@@ -1,18 +1,19 @@
-using io.agora.rtm.demo;
 using Agora.Rtm;
 using UnityEngine;
 using System.Threading.Tasks;
-using Agora.Spaces;
 
-namespace Agora.Demo.Meta.Controller
+namespace Agora.Spaces.Controller
 {
+    /// <summary>
+    ///   The MetaRTMController controls functionalities using the Signal SDK.
+    /// It does not work on any game logics.
+    /// </summary>
     public class MetaRTMController : MonoBehaviour
     {
         IRtmClient _rtmClient = null;
         IStreamChannel _streamChannel = null;
         IRtmPresence _presence = null;
 
-        public AppIdInput InfoInput;
         public uint PresenceTimeout = 1;
 
         public string TransformTopic = "TransformData";
@@ -47,6 +48,11 @@ namespace Agora.Demo.Meta.Controller
             _rtmClient.Dispose();
         }
 
+        /// <summary>
+        ///  The InitClient method controls the start of rtmClient; it will
+        /// join the stream channel for transform sync in this step.
+        /// </summary>
+        /// <param name="game"></param>
         public async void InitClient(MetaGameController game)
         {
             GameController = game;
@@ -54,7 +60,7 @@ namespace Agora.Demo.Meta.Controller
             ChannelName = GameApplication.Instance.ChannelName;
 
             RtmConfig config = new RtmConfig();
-            config.appId = InfoInput.appID;
+            config.appId = GameApplication.Instance.AppInfoInput.appID;
             config.userId = UserID;
             config.presenceTimeout = PresenceTimeout;
             config.useStringUserId = true;
@@ -96,14 +102,15 @@ namespace Agora.Demo.Meta.Controller
             _streamChannel = _rtmClient.CreateStreamChannel(channel);
             JoinStreamChannel();
         }
+
         async void JoinStreamChannel()
         {
             if (this._streamChannel == null)
             {
                 return;
             }
-
-            string token = InfoInput.token == "" ? InfoInput.appID : InfoInput.token;
+            var infoInput = GameApplication.Instance.AppInfoInput;
+            string token = infoInput.rtmToken == "" ? infoInput.appID : infoInput.rtmToken;
             JoinChannelOptions joptions = new JoinChannelOptions()
             {
                 token = token,
@@ -279,7 +286,8 @@ namespace Agora.Demo.Meta.Controller
         async Task<RtmStatus> LoginAsync()
         {
             // assume test mode AppID for empty token. In this case, AppID is the token.
-            string token = string.IsNullOrEmpty(InfoInput.token) ? InfoInput.appID : InfoInput.token;
+            var infoInput = GameApplication.Instance.AppInfoInput;
+            string token = infoInput.rtmToken == "" ? infoInput.appID : infoInput.rtmToken;
             var result = await _rtmClient.LoginAsync(token);
 
             if (result.Status.Error)

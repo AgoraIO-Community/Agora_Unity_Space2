@@ -2,9 +2,12 @@ using System.Collections.Generic;
 using UnityEngine;
 using Agora.Demo.Meta.Model;
 
-namespace Agora.Demo.Meta.Controller
+namespace Agora.Spaces.Controller
 {
-
+    /// <summary>
+    ///   The PlayerSyncManager keeps track of the user transform data, publish 
+    /// local positions, and update remote positions.
+    /// </summary>
     public class PlayerSyncManager
     {
         Dictionary<string, Transform> AvatarMap = new Dictionary<string, Transform>();

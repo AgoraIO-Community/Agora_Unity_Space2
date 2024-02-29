@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -10,17 +9,18 @@ namespace Agora.Spaces
     public class GameApplication : MonoBehaviour
     {
         [SerializeField]
+        internal AppInfoInput AppInfoInput;
+
+        [SerializeField]
         LoginPrompt loginPrompt;
 
         [SerializeField]
         string GameLevel;
 
-
         public static GameApplication Instance { get; private set; }
 
         public string UserName { get; private set; }
         public string ChannelName { get; private set; }
-
 
         bool _autoMode = false; // indicates the app is launched from commandline
         string _envNameExtension = "";
@@ -44,6 +44,11 @@ namespace Agora.Spaces
             UserName = info.UserName;
             ChannelName = info.SpaceName;
             SceneManager.LoadScene(GameLevel);
+        }
+
+        public void StopGame()
+        {
+
         }
 
         // Set up variable using the environment; this is for batch launching

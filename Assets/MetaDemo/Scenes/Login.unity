@@ -424,6 +424,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 25989c0a9f5744a84ad11049502128d3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  AppInfoInput: {fileID: 11400000, guid: e572bccd1e5b747d49234cf6ea166e43, type: 2}
   loginPrompt: {fileID: 2677283449829484210}
   GameLevel: Game
 --- !u!1001 &2677283449829484209

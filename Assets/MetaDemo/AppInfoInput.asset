@@ -9,9 +9,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3dfd9976a692048869dbee2787b1afd8, type: 3}
-  m_Name: DemoAppIdInput
+  m_Script: {fileID: 11500000, guid: af0f45a0654af42af9c964069e4119b5, type: 3}
+  m_Name: AppInfoInput
   m_EditorClassIdentifier: 
   appID: 00e97fd319264c1ea2be69a370bd712e
-  token: 
-  channelName: signal2
+  rtcToken: 
+  rtmToken: 

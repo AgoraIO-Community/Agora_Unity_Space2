@@ -744,6 +744,7 @@ GameObject:
   - component: {fileID: 711203059}
   - component: {fileID: 711203058}
   - component: {fileID: 711203060}
+  - component: {fileID: 711203061}
   m_Layer: 0
   m_Name: GameController
   m_TagString: Untagged
@@ -763,7 +764,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 991b75bf7d05741d7bd13c1adfd64f2d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  InfoInput: {fileID: 11400000, guid: 228eaac31a30b49bcbe42dced412554e, type: 2}
   PresenceTimeout: 1
   TransformTopic: TransformData
 --- !u!4 &711203059
@@ -795,6 +795,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   AvatarPrefab: {fileID: 7619140271685878370, guid: b15d266939a6544b18f9d9e4b19aa7e6, type: 3}
   UsersRoot: {fileID: 427582827}
+--- !u!114 &711203061
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 711203057}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e8a031a2dede1420288db40bdac3c0ae, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  VideoStreamWanted: 1
+  MediaPlayerContainer: MediaPlayer
 --- !u!1 &813426179
 GameObject:
   m_ObjectHideFlags: 0
@@ -1253,7 +1267,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7619140271685878370, guid: b15d266939a6544b18f9d9e4b19aa7e6, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: b15d266939a6544b18f9d9e4b19aa7e6, type: 3}
@@ -1267,6 +1281,10 @@ PrefabInstance:
     - target: {fileID: 813820880060115594, guid: a48d9913d0db542eb91a7dc427d97e51, type: 3}
       propertyPath: m_Name
       value: UFO
+      objectReference: {fileID: 0}
+    - target: {fileID: 813820880060115594, guid: a48d9913d0db542eb91a7dc427d97e51, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2815546297232251962, guid: a48d9913d0db542eb91a7dc427d97e51, type: 3}
       propertyPath: destination
