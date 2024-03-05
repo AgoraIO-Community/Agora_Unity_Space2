@@ -38,7 +38,6 @@ namespace Agora.Spaces.Controller
                 Destroy(Instance);
             }
             Instance = this;
-            if (transform.parent == null) DontDestroyOnLoad(this);
         }
 
         // Use this for initialization

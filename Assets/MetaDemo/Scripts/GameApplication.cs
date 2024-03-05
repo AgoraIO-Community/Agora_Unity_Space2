@@ -6,6 +6,8 @@ namespace Agora.Spaces
 {
     // Singleton for controlling loading the application level with extra
     // capability to launch with user input for username and spacename
+    // This is a singleton script that the hosting script should be one instance
+    // as well.
     public class GameApplication : MonoBehaviour
     {
         [SerializeField]
@@ -45,7 +47,7 @@ namespace Agora.Spaces
         {
             if (Instance != null)
             {
-                Destroy(Instance);
+                Destroy(Instance.gameObject);
             }
             Instance = this;
 
@@ -64,7 +66,10 @@ namespace Agora.Spaces
 
         public void StopGame()
         {
-
+            // by leaving the game scene, the system will destroy the
+            // MetaGameController and invoke the deinit functions as
+            // consequence.
+            SceneManager.LoadSceneAsync(0);  // 0 is the starting scene
         }
 
         // Set up variable using the environment; this is for batch launching

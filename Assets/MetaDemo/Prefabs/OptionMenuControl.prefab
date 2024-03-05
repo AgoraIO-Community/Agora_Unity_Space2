@@ -691,7 +691,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 4863174792142949644}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ee1dfff683c784a35aae851116628373, type: 3}
+  m_Script: {fileID: 11500000, guid: 5dcb273ec066d40258c7aa6aa8052802, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &4863174792156163105
@@ -823,7 +823,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 4863174792327273001}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a39877b60b40c41a38fae3915cb014fa, type: 3}
+  m_Script: {fileID: 11500000, guid: 41b73eda9ad8c4fc2a4187b3ecfb24c4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   MenuButton: {fileID: 4863174792123698115}
@@ -833,10 +833,8 @@ MonoBehaviour:
   PlayButton: {fileID: 4863174793128893082}
   SttButton: {fileID: 4863174792648133428}
   MenuDialog: {fileID: 818017872638520933}
-  STTView: {fileID: 0}
-  STTSubtitle: {fileID: 0}
   LanguageDropdown: {fileID: 4863174792039386907}
-  WebURL: https://stt-demo-staging.agora.io/#/
+  WebURL: 
 --- !u!1 &4863174792333645940
 GameObject:
   m_ObjectHideFlags: 0
@@ -1823,7 +1821,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 4863174792648133425}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ee1dfff683c784a35aae851116628373, type: 3}
+  m_Script: {fileID: 11500000, guid: 5dcb273ec066d40258c7aa6aa8052802, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &4863174792701739827
@@ -2303,7 +2301,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 4863174793000306261}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ee1dfff683c784a35aae851116628373, type: 3}
+  m_Script: {fileID: 11500000, guid: 5dcb273ec066d40258c7aa6aa8052802, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &4863174793012336540
@@ -2707,7 +2705,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 4863174793128893076}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ee1dfff683c784a35aae851116628373, type: 3}
+  m_Script: {fileID: 11500000, guid: 5dcb273ec066d40258c7aa6aa8052802, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &4863174793162830550
