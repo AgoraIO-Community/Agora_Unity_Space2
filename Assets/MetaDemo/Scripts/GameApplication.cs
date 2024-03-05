@@ -20,7 +20,23 @@ namespace Agora.Spaces
         public static GameApplication Instance { get; private set; }
 
         public string UserName { get; private set; }
-        public string ChannelName { get; private set; }
+        string ChannelName { get; set; }
+        public string RTCChannelName
+        {
+            get
+            {
+                return ChannelName + "#RTC";
+            }
+        }
+        public string RTMChannelName
+        {
+            get
+            {
+                return ChannelName + "#RTM";
+            }
+        }
+
+        public bool EnableVideo { get; private set; } = true;
 
         bool _autoMode = false; // indicates the app is launched from commandline
         string _envNameExtension = "";

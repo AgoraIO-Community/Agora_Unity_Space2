@@ -42,10 +42,19 @@ namespace Agora.Spaces.Controller
 
         private void OnDestroy()
         {
-            LeaveStreamChannel();
-            ReleaseStreamChannel();
-            LogoutAsync();
-            _rtmClient.Dispose();
+            DeInit();
+        }
+
+        internal void DeInit()
+        {
+            if (_rtmClient != null)
+            {
+                LeaveStreamChannel();
+                ReleaseStreamChannel();
+                LogoutAsync();
+                _rtmClient.Dispose();
+                _rtmClient = null;
+            }
         }
 
         /// <summary>
@@ -57,7 +66,7 @@ namespace Agora.Spaces.Controller
         {
             GameController = game;
             UserID = GameApplication.Instance.UserName;
-            ChannelName = GameApplication.Instance.ChannelName;
+            ChannelName = GameApplication.Instance.RTMChannelName;
 
             RtmConfig config = new RtmConfig();
             config.appId = GameApplication.Instance.AppInfoInput.appID;
@@ -65,7 +74,7 @@ namespace Agora.Spaces.Controller
             config.presenceTimeout = PresenceTimeout;
             config.useStringUserId = true;
             config.logConfig = new RtmLogConfig() { filePath = Application.persistentDataPath + "/" + GameController.GetLogName() };
-            Debug.LogWarning("Log path:" + config.logConfig.filePath);
+            Debug.Log("Log path:" + config.logConfig.filePath);
 
             IRtmClient rtmClient = null;
             try
@@ -411,7 +420,7 @@ namespace Agora.Spaces.Controller
         void OnTopicEvent(TopicEvent @event)
         {
             string str = string.Format("OnTopicEvent: channelName:{0} publisher:{1}", @event.channelName, @event.publisher);
-            Debug.LogWarning(str);
+            Debug.Log(str);
         }
 
         void OnConnectionStateChanged(string channelName, RTM_CONNECTION_STATE state, RTM_CONNECTION_CHANGE_REASON reason)

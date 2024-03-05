@@ -188,7 +188,7 @@ namespace Agora.Spaces.UI
             // Update the spatial position of the specified remote user
             RemoteVoicePositionInfo remotePosInfo = new RemoteVoicePositionInfo(position, forward);
             var rc = MetaRTCController.Instance.SpatialAudioController.UpdateRemotePositionEx(UidUseInMPK, remotePosInfo,
-            new RtcConnection(GameApplication.Instance.ChannelName, UidUseInEx));
+            new RtcConnection(GameApplication.Instance.RTCChannelName, UidUseInEx));
         }
 
         private void JoinChannelExWithMPK(string channelName, uint uid, int playerId)

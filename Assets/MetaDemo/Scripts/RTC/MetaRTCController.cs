@@ -17,8 +17,6 @@ namespace Agora.Spaces.Controller
         internal Vector3 InitPosition { get; private set; }
 
         [SerializeField]
-        bool VideoStreamWanted = true;
-        [SerializeField]
         internal string MediaPlayerContainer = "MediaPlayer";
 
         internal IRtcEngineEx RtcEngine { get; private set; }
@@ -26,8 +24,10 @@ namespace Agora.Spaces.Controller
 
         public bool JoinedChannel { get; internal set; }
         public uint LocalUID { get; internal set; }
+
         public event System.Action<uint> OnOfflineNotify;
         public event System.Action<uint> OnJoinedChannelNotify;
+        public event System.Action<string, uint> OnRemoteUserJoinedNotify;
 
         internal Dictionary<string, uint> UserAccounts = new Dictionary<string, uint>();
 
@@ -87,7 +87,10 @@ namespace Agora.Spaces.Controller
                                         AUDIO_SCENARIO_TYPE.AUDIO_SCENARIO_GAME_STREAMING);
             RtcEngine.Initialize(context);
 
-            RtcEngine.EnableVideo();
+            if (GameApplication.Instance.EnableVideo)
+            {
+                RtcEngine.EnableVideo();
+            }
             RtcEngine.SetClientRole(CLIENT_ROLE_TYPE.CLIENT_ROLE_BROADCASTER);
 
             RtcEngine.InitEventHandler(handler);
@@ -126,8 +129,8 @@ namespace Agora.Spaces.Controller
 
             ChannelMediaOptions options = new ChannelMediaOptions();
             options.autoSubscribeAudio.SetValue(true);
-            options.autoSubscribeVideo.SetValue(VideoStreamWanted);
-            options.publishCameraTrack.SetValue(VideoStreamWanted);
+            options.autoSubscribeVideo.SetValue(GameApplication.Instance.EnableVideo);
+            options.publishCameraTrack.SetValue(GameApplication.Instance.EnableVideo);
             options.publishMicrophoneTrack.SetValue(true);
             options.enableAudioRecordingOrPlayout.SetValue(true);
             options.clientRoleType.SetValue(CLIENT_ROLE_TYPE.CLIENT_ROLE_BROADCASTER);
@@ -185,6 +188,15 @@ namespace Agora.Spaces.Controller
             OnOfflineNotify?.Invoke(user);
         }
 
+        internal void DeInit()
+        {
+            RtcEngine.InitEventHandler(null);
+            RtcEngine.LeaveChannel();
+            RtcEngine.Dispose();
+            RtcEngine = null;
+            Instance = null;
+        }
+
         public void updateSpatialAudioPosition(uint remoteUid, float sourceDistance)
         {
             // remoteUid = GameApplication.LastRemoteUser;
@@ -205,13 +217,7 @@ namespace Agora.Spaces.Controller
         private void OnDestroy()
         {
             if (RtcEngine == null) return;
-
-            RtcEngine.InitEventHandler(null);
-            RtcEngine.LeaveChannel();
-            RtcEngine.Dispose();
-            RtcEngine = null;
-            Instance = null;
-            Destroy(gameObject);
+            DeInit();
         }
 
         internal MediaTV GetMediaTV()
@@ -276,9 +282,16 @@ namespace Agora.Spaces.Controller
                 Debug.Log($"User info updated uid:{uid} ----> {info.userAccount}");
             }
 
+            // OnUserJoined happens after OnUserInfoUpdated if it is joined with userAccount
             public override void OnUserJoined(RtcConnection connection, uint uid, int elapsed)
             {
-                Debug.Log(string.Format("OnUserJoined uid: ${0} elapsed: ${1}", uid, elapsed));
+                Debug.Log(string.Format("OnUserJoined uid: {0} elapsed: {1}", uid, elapsed));
+                UserInfo info = default;
+                if (app.RtcEngine.GetUserInfoByUid(uid, ref info) == 0) // success
+                {
+                    string name = info.userAccount;
+                    app.OnRemoteUserJoinedNotify?.Invoke(name, uid);
+                }
                 //var mediaTV = app.GetMediaTV();
                 //if (mediaTV != null && uid == mediaTV.UidUseInMPK && !GameApplication.Instance.IsHost)
                 //{
@@ -288,7 +301,7 @@ namespace Agora.Spaces.Controller
 
             public override void OnUserOffline(RtcConnection connection, uint uid, USER_OFFLINE_REASON_TYPE reason)
             {
-                Debug.Log(string.Format("OnUserOffLine uid: ${0}, reason: ${1}", uid,
+                Debug.Log(string.Format("OnUserOffLine uid: {0}, reason: {1}", uid,
                     (int)reason));
                 app.HandleOffline(uid);
                 //var mediaTV = app.GetMediaTV();

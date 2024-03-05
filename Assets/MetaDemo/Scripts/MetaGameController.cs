@@ -27,17 +27,22 @@ namespace Agora.Spaces.Controller
 
         const float YPos = 1f;
 
-        Transform _myAvatar;
+        Transform _myAvatarTransform;
         bool _exitSelfStateSync = false;
         Vector3 _myInitPosition = Vector3.zero;
 
         HashSet<string> SubscribeGroup = new HashSet<string>();
+
+        // mapping username to the created avatar 
+        internal Dictionary<string, MetaAvatar> AvatarDict = new Dictionary<string, MetaAvatar>();
 
         private void Awake()
         {
             SyncManager = new PlayerSyncManager();
             _rtmController = GetComponent<MetaRTMController>();
             _rtcController = GetComponent<MetaRTCController>();
+            _rtcController.OnRemoteUserJoinedNotify += BindAvatarWithRTCInfo;
+            _rtcController.OnJoinedChannelNotify += BindMyAvatarToRTC;
         }
 
         private void Start()
@@ -52,7 +57,7 @@ namespace Agora.Spaces.Controller
             _rtmController.OnJoinStreamChannel += () =>
             {
                 SendTransformData();
-                _rtcController.JoinChannel("", GameApplication.Instance.UserName, _myInitPosition);
+                _rtcController.JoinChannel(GameApplication.Instance.RTCChannelName, GameApplication.Instance.UserName, _myInitPosition);
             };
             _rtmController.OnLeaveStreamChannel += () =>
             {
@@ -66,6 +71,13 @@ namespace Agora.Spaces.Controller
             };
         }
 
+        private void OnDestroy()
+        {
+            _rtcController.OnRemoteUserJoinedNotify -= BindAvatarWithRTCInfo;
+
+            _rtcController.DeInit();
+            _rtmController.DeInit();
+        }
 
         internal string GetLogName()
         {
@@ -102,7 +114,7 @@ namespace Agora.Spaces.Controller
         /// <summary>
         ///    Spawn avatar to a 3d location 
         /// </summary>
-        /// <param name="name">User name</param>
+        /// <param name="name">User name from RTM callback</param>
         /// <param name="num">The number of people in game</param>
         public void SpawnAvatar(string name, bool owned = false, string json = null)
         {
@@ -116,8 +128,8 @@ namespace Agora.Spaces.Controller
                 var sync = ava.AddComponent<TransformSynchronizer>();
                 ava.AddComponent<PlayerController>();
                 sync.UserID = name;
-                _myAvatar = ava.transform;
-                EnableCameraFollow(true, _myAvatar);
+                _myAvatarTransform = ava.transform;
+                EnableCameraFollow(true, _myAvatarTransform);
             }
             else
             {
@@ -128,6 +140,13 @@ namespace Agora.Spaces.Controller
                 ava.transform.localRotation = Quaternion.Euler(tdata.EulerAngles);
                 ValidateScriptions(name, tdata);
             }
+
+            var tar = ava.GetComponent<MetaAvatar>();
+            // Although by common sense we want to init this component at creation
+            // dependency on a valid uid requires the RTC connection has been validated
+            // and bound to a UID
+            // tar.Init(uid, _rtcController, GameApplication.Instance.EnableVideo);
+            AvatarDict[name] = tar;
 
             // label the name
             Transform label = ava.transform.Find("Canvas/NameLabel");
@@ -143,6 +162,28 @@ namespace Agora.Spaces.Controller
                 text.text = name;
             }
             SyncManager.AddPlayerTransform(name, ava.transform, owned);
+        }
+
+        void BindAvatarWithRTCInfo(string username, uint uid)
+        {
+            if (AvatarDict.ContainsKey(username))
+            {
+                var tar = AvatarDict[username];
+                tar.Init(uid, _rtcController, GameApplication.Instance.EnableVideo);
+            }
+            else
+            {
+                Debug.LogWarning($"BindAvatarWithRTCInfo, user {username} not found!");
+            }
+        }
+
+        void BindMyAvatarToRTC(uint uid)
+        {
+            if (GameApplication.Instance.EnableVideo)
+            {
+                var tar = _myAvatarTransform.GetComponent<MetaAvatar>();
+                tar.Init(0, _rtcController, true);
+            }
         }
 
         IEnumerator CoSyncLocalStateTick()
@@ -162,9 +203,9 @@ namespace Agora.Spaces.Controller
 
         internal void SendTransformData()
         {
-            if (_myAvatar != null)
+            if (_myAvatarTransform != null)
             {
-                TransformData transformData = new TransformData(_myAvatar)
+                TransformData transformData = new TransformData(_myAvatarTransform)
                 {
                     UserId = GameApplication.Instance.UserName
                 };

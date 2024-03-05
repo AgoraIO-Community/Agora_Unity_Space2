@@ -25,9 +25,9 @@ namespace Agora.Spaces.Controller
             }
         }
 
-        public bool HasPlayer(string name)
+        public bool HasPlayer(string userId)
         {
-            return AvatarMap.ContainsKey(name);
+            return AvatarMap.ContainsKey(userId);
         }
 
         public void RemovePlayer(string userId)
