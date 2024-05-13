@@ -283,7 +283,7 @@ namespace Agora.Spaces.Controller
                 var result = await _streamChannel.PublishTopicMessageAsync(TransformTopic, json, options);
                 if (result.Status.Error)
                 {
-                    Debug.LogError("Login failed, error = " + result.Status.Reason);
+                    Debug.LogError("Publish topic message failed, error = " + result.Status.Reason);
                 }
                 else
                 {
