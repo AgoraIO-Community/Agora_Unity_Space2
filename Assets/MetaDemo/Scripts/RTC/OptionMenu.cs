@@ -7,6 +7,7 @@ using Agora.Spaces.Controller;
 
 namespace Agora.Spaces.UI
 {
+    // The OptionMenu class handles user command to mute/unmute
     public class OptionMenu : MonoBehaviour
     {
         [SerializeField] Button MenuButton;
@@ -15,14 +16,12 @@ namespace Agora.Spaces.UI
         [SerializeField] ToggleStateButton MuteCamButton;
         [SerializeField] ToggleStateButton PlayButton;
         [SerializeField] ToggleStateButton SttButton;
-        // [SerializeField] Button WebButton;
         [SerializeField] GameObject MenuDialog;
+
+        //TODO: add STT Feature to use the following
         //[SerializeField] GameObject STTView;
         //[SerializeField] Text STTSubtitle;
-
-        [SerializeField] Dropdown LanguageDropdown;
-
-        [SerializeField] string WebURL;
+        //[SerializeField] Dropdown LanguageDropdown;
 
         // Start is called before the first frame update
         IEnumerator Start()
@@ -37,7 +36,10 @@ namespace Agora.Spaces.UI
             SetupButtons();
         }
 
-
+        /// <summary>
+        /// Setup the UI Buttons.  The Button uses a component ToggleStateButton
+        /// to manage logic for different state of the button.
+        /// </summary>
         void SetupButtons()
         {
             MuteMicButton.Setup(initOnOff: false,
@@ -85,20 +87,28 @@ namespace Agora.Spaces.UI
             MuteMicButton.gameObject.SetActive(true);
             // PlayButton.gameObject.SetActive(true);
             // PlayButton.GetComponent<Button>().interactable = GameApplication.Instance.IsHost;
-
-            //WebButton.onClick.AddListener(() => Application.OpenURL(WebURL));
         }
 
+        /// <summary>
+        ///   Hide/Unhide the Menu button
+        /// </summary>
         void HandleMenuTap()
         {
             MenuDialog.SetActive(!MenuDialog.activeInHierarchy);
         }
 
+        /// <summary>
+        ///   Exit this scene
+        /// </summary>
         void HandleExit()
         {
             GameApplication.Instance.StopGame();
         }
 
+        /// <summary>
+        ///   Play media
+        /// </summary>
+        /// <param name="play"></param>
         void PlayMedia(bool play)
         {
             var mediaTV = MetaRTCController.Instance.GetMediaTV();

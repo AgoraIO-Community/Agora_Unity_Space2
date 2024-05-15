@@ -6,6 +6,9 @@ using Agora.Spaces.Controller;
 
 namespace Agora.Spaces.UI
 {
+    // The MediaTV class demostrates how to use MediaPlayKit (MPK) to play
+    // video media content as a source for the channel. 
+    // TODO: enable this with the SpatialAudio feature
     public class MediaTV : MonoBehaviour
     {
         internal IRtcEngineEx RtcEngine = null;
@@ -53,8 +56,6 @@ namespace Agora.Spaces.UI
 
             MpkEventHandler handler = new MpkEventHandler(this);
             MediaPlayer.InitEventHandler(handler);
-
-
         }
 
         public void Play()
@@ -193,7 +194,7 @@ namespace Agora.Spaces.UI
 
         private void JoinChannelExWithMPK(string channelName, uint uid, int playerId)
         {
-            _rtcConnection = new RtcConnection(channelId: channelName, localUid: uid);
+            _rtcConnection = new RtcConnection(channel_id: channelName, local_uid: uid);
             ChannelMediaOptions options = new ChannelMediaOptions();
             options.autoSubscribeAudio.SetValue(false);
             options.autoSubscribeVideo.SetValue(true);
@@ -217,7 +218,7 @@ namespace Agora.Spaces.UI
                 _mediaTV = sample;
             }
 
-            public override void OnPlayerSourceStateChanged(MEDIA_PLAYER_STATE state, MEDIA_PLAYER_ERROR ec)
+            public override void OnPlayerSourceStateChanged(MEDIA_PLAYER_STATE state, MEDIA_PLAYER_REASON ec)
             {
                 Debug.Log("OnPlayerSourceStateChanged = " + state);
                 if (state == MEDIA_PLAYER_STATE.PLAYER_STATE_OPEN_COMPLETED)
@@ -226,6 +227,11 @@ namespace Agora.Spaces.UI
                 }
                 else if (state == MEDIA_PLAYER_STATE.PLAYER_STATE_STOPPED)
                 {
+                    // if there is stopped logic, put it here
+                }
+                else if (state == MEDIA_PLAYER_STATE.PLAYER_STATE_FAILED)
+                {
+                    Debug.LogWarning($"PLAYER_STATE_FAILED, reason = {ec}");
                 }
             }
 

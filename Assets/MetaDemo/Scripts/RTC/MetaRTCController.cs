@@ -29,6 +29,9 @@ namespace Agora.Spaces.Controller
         public event System.Action<uint> OnJoinedChannelNotify;
         public event System.Action<string, uint> OnRemoteUserJoinedNotify;
 
+        /// <summary>
+        ///   Mapping user name to uid
+        /// </summary>
         internal Dictionary<string, uint> UserAccounts = new Dictionary<string, uint>();
 
         private void Awake()
@@ -81,9 +84,12 @@ namespace Agora.Spaces.Controller
             UserEventHandler handler = new UserEventHandler(this);
 
             //If you use a Bluetooth headset, you need to set AUDIO_SCENARIO_TYPE to AUDIO_SCENARIO_GAME_STREAMING.
-            RtcEngineContext context = new RtcEngineContext(_appID, 0,
-                                        CHANNEL_PROFILE_TYPE.CHANNEL_PROFILE_LIVE_BROADCASTING,
-                                        AUDIO_SCENARIO_TYPE.AUDIO_SCENARIO_GAME_STREAMING);
+            RtcEngineContext context = new RtcEngineContext()
+            {
+                appId = _appID,
+                channelProfile = CHANNEL_PROFILE_TYPE.CHANNEL_PROFILE_LIVE_BROADCASTING,
+                audioScenario = AUDIO_SCENARIO_TYPE.AUDIO_SCENARIO_GAME_STREAMING
+            };
             RtcEngine.Initialize(context);
 
             if (GameApplication.Instance.EnableVideo)
@@ -137,27 +143,6 @@ namespace Agora.Spaces.Controller
             RtcEngine.JoinChannelWithUserAccount(_token, channelName, userName, options);
         }
 
-        public int UpdateSelfPosition(float[] position, float[] axisForward, float[] axisRight, float[] axisUp)
-        {
-            // RtcConnection connection = new RtcConnection(ChannelID, LocalUID);
-            var ret = SpatialAudioController.UpdateSelfPosition(position, axisForward, axisRight, axisUp);
-            return ret;
-        }
-        public int UpdateRemotePosition(uint uid, RemoteVoicePositionInfo posInfo)
-        {
-            // RtcConnection connection = new RtcConnection(ChannelID, LocalUID);
-            var ret = SpatialAudioController.UpdateRemotePosition(uid, posInfo);
-            return ret;
-        }
-
-        public int UpdateRemotePosition(string userName, RemoteVoicePositionInfo posInfo)
-        {
-            if (UserAccounts.ContainsKey(userName))
-            {
-                return UpdateRemotePosition(UserAccounts[userName], posInfo);
-            }
-            return -1;
-        }
 
         public void LeaveChannel()
         {
@@ -196,7 +181,35 @@ namespace Agora.Spaces.Controller
             Instance = null;
         }
 
-        public void updateSpatialAudioPosition(uint remoteUid, float sourceDistance)
+        private void OnDestroy()
+        {
+            if (RtcEngine == null) return;
+            DeInit();
+        }
+
+        #region -- Spatial Audio API Calls --
+        public int UpdateSelfPosition(float[] position, float[] axisForward, float[] axisRight, float[] axisUp)
+        {
+            var ret = SpatialAudioController.UpdateSelfPosition(position, axisForward, axisRight, axisUp);
+            return ret;
+        }
+
+        public int UpdateRemotePosition(uint uid, RemoteVoicePositionInfo posInfo)
+        {
+            var ret = SpatialAudioController.UpdateRemotePosition(uid, posInfo);
+            return ret;
+        }
+
+        public int UpdateRemotePosition(string userName, RemoteVoicePositionInfo posInfo)
+        {
+            if (UserAccounts.ContainsKey(userName))
+            {
+                return UpdateRemotePosition(UserAccounts[userName], posInfo);
+            }
+            return -1;
+        }
+
+        public void UpdateSpatialAudioPosition(uint remoteUid, float sourceDistance)
         {
             // remoteUid = GameApplication.LastRemoteUser;
             // Set the coordinates in the world coordinate system.
@@ -213,12 +226,12 @@ namespace Agora.Spaces.Controller
             // Debug.Log($"Remote user ${remoteUid} spatial position updated(${sourceDistance} rc = " + rc);
         }
 
-        private void OnDestroy()
-        {
-            if (RtcEngine == null) return;
-            DeInit();
-        }
+        #endregion
 
+        /// <summary>
+        ///   Retrieve the MediaTV componenet
+        /// </summary>
+        /// <returns></returns>
         internal MediaTV GetMediaTV()
         {
             string MediaPlayerContainer = MetaRTCController.Instance.MediaPlayerContainer;

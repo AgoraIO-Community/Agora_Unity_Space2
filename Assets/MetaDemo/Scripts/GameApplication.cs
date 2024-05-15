@@ -19,10 +19,23 @@ namespace Agora.Spaces
         [SerializeField]
         string GameLevel;
 
+        // Singleton
         public static GameApplication Instance { get; private set; }
 
+        // user name, will be seen as a label on the object
         public string UserName { get; private set; }
+
+        /// <summary>
+        ///   Channel Name: 
+        ///   Conceptually there is one channel name. However, RTC and RTM are
+        /// dingtinct SDKs that uses the same backend.  Therefore, internally
+        /// we should make a different channel for each SDK.
+        /// </summary>
         string ChannelName { get; set; }
+
+        /// <summary>
+        /// Use this channel name for joining a RTC channel
+        /// </summary>
         public string RTCChannelName
         {
             get
@@ -30,6 +43,10 @@ namespace Agora.Spaces
                 return ChannelName + "#RTC";
             }
         }
+
+        /// <summary>
+        ///   Use this channel name for joining a RTM channel
+        /// </summary>
         public string RTMChannelName
         {
             get
@@ -38,9 +55,14 @@ namespace Agora.Spaces
             }
         }
 
+        /// <summary>
+        ///   Determine by user if camera should be capturing
+        /// </summary>
         public bool EnableVideo { get; private set; } = true;
 
+        // For launching the game from CLI environment
         bool _autoMode = false; // indicates the app is launched from commandline
+        // For launching the game from CLI environment
         string _envNameExtension = "";
 
         void Start()
@@ -56,7 +78,10 @@ namespace Agora.Spaces
             DontDestroyOnLoad(this);
         }
 
-        // PlayButton trigger to load the next scene
+        /// <summary>
+        ///   PlayButton trigger to load the next scene
+        /// </summary>
+        /// <param name="info"></param>
         void LoadScene(IEntryInfo info)
         {
             UserName = info.UserName;
@@ -64,6 +89,9 @@ namespace Agora.Spaces
             SceneManager.LoadScene(GameLevel);
         }
 
+        /// <summary>
+        ///   Leave the game play scene
+        /// </summary>
         public void StopGame()
         {
             // by leaving the game scene, the system will destroy the
@@ -72,6 +100,7 @@ namespace Agora.Spaces
             SceneManager.LoadSceneAsync(0);  // 0 is the starting scene
         }
 
+        #region -- batch lanuching --
         // Set up variable using the environment; this is for batch launching
         // instances of app for testing.
         void SetupBatchEnvironment()
@@ -91,5 +120,6 @@ namespace Agora.Spaces
         {
             return Application.platform.ToString() + _envNameExtension;
         }
+        #endregion
     }
 }

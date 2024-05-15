@@ -19,12 +19,17 @@ namespace Agora.Spaces.Controller
         public string TransformTopic = "TransformData";
         public static MetaRTMController Instance;
 
+        /// <summary>
+        ///   Remembers whether the Transform topic is joined
+        /// </summary>
         bool _inTransformSyncTopic = false;
 
         string UserID;
         string ChannelName;
 
         MetaGameController GameController;
+
+        /* Event handlers */
         public event System.Action OnLoginComplete;
         public event System.Action OnJoinStreamChannel;
         public event System.Action OnLeaveStreamChannel;
@@ -45,6 +50,9 @@ namespace Agora.Spaces.Controller
             DeInit();
         }
 
+        /// <summary>
+        ///   Destructor
+        /// </summary>
         internal void DeInit()
         {
             if (_rtmClient != null)
@@ -112,6 +120,10 @@ namespace Agora.Spaces.Controller
             JoinStreamChannel();
         }
 
+        /// <summary>
+        ///   Join a stream channel with options and handle errors. 
+        /// Invoke JoinTopic next.
+        /// </summary>
         async void JoinStreamChannel()
         {
             if (this._streamChannel == null)
@@ -144,6 +156,10 @@ namespace Agora.Spaces.Controller
             JoinTopic(TransformTopic);
         }
 
+        /// <summary>
+        ///    Join a topic.
+        /// </summary>
+        /// <param name="topic"></param>
         public async void JoinTopic(string topic)
         {
             JoinTopicOptions toptions = new JoinTopicOptions()
@@ -172,6 +188,10 @@ namespace Agora.Spaces.Controller
             }
         }
 
+        /// <summary>
+        ///  Leave a topic
+        /// </summary>
+        /// <param name="topic"></param>
         public async void LeaveTopic(string topic)
         {
             var result = await _streamChannel.LeaveTopicAsync(topic);
@@ -191,6 +211,11 @@ namespace Agora.Spaces.Controller
         }
 
 
+        /// <summary>
+        ///   Subscribe a topic
+        /// </summary>
+        /// <param name="topic"></param>
+        /// <param name="users"></param>
         public async void SubscribeTopic(string topic, string[] users)
         {
             TopicOptions options = new TopicOptions(users);
@@ -216,6 +241,10 @@ namespace Agora.Spaces.Controller
             }
         }
 
+        /// <summary>
+        ///   Publish the transfrom data by setting a state on Presence.
+        /// </summary>
+        /// <param name="json">JSON string of a serialized structure.</param>
         public async void PublishTransformState(string json)
         {
             StateItem posItem = new StateItem { key = "TransformData", value = json };
@@ -224,6 +253,9 @@ namespace Agora.Spaces.Controller
             );
         }
 
+        /// <summary>
+        ///   LeaveStreamChannel
+        /// </summary>
         public async void LeaveStreamChannel()
         {
             if (_streamChannel == null)
@@ -249,13 +281,19 @@ namespace Agora.Spaces.Controller
             LeaveTopic(TransformTopic);
         }
 
+        /// <summary>
+        ///    Release Stream Channel
+        /// </summary>
         void ReleaseStreamChannel()
         {
             _streamChannel.Dispose();
             _streamChannel = null;
         }
 
-
+        /// <summary>
+        ///    Publish transform data by posting 
+        /// </summary>
+        /// <param name="data"></param>
         public async void PublishTransformSync(byte[] data)
         {
             if (_inTransformSyncTopic)
@@ -274,6 +312,10 @@ namespace Agora.Spaces.Controller
             }
         }
 
+        /// <summary>
+        ///   Publish the transfrom data by setting a state on Presence.
+        /// </summary>
+        /// <param name="json"></param>
         public async void PublishTransformSync(string json)
         {
             if (_inTransformSyncTopic)
@@ -292,6 +334,10 @@ namespace Agora.Spaces.Controller
             }
         }
 
+        /// <summary>
+        ///   Login the the RTM Client
+        /// </summary>
+        /// <returns></returns>
         async Task<RtmStatus> LoginAsync()
         {
             // assume test mode AppID for empty token. In this case, AppID is the token.
@@ -311,6 +357,9 @@ namespace Agora.Spaces.Controller
             return result.Status;
         }
 
+        /// <summary>
+        ///   Logout the RTM Client
+        /// </summary>
         async void LogoutAsync()
         {
             var result = await _rtmClient.LogoutAsync();
@@ -322,6 +371,10 @@ namespace Agora.Spaces.Controller
         }
 
         #region --- RTM Event Handlers ---
+        /// <summary>
+        ///    A stream message is received.
+        /// </summary>
+        /// <param name="event"></param>
         void OnMessageEvent(MessageEvent @event)
         {
             string str = string.Format("OnMessageEvent channelName:{0} channelTopic:{1} channelType:{2} publisher:{3} message:{4} customType:{5}",
@@ -343,6 +396,10 @@ namespace Agora.Spaces.Controller
             }
         }
 
+        /// <summary>
+        ///   This is the core logic that does the bookkeeping of remote users
+        /// </summary>
+        /// <param name="event"></param>
         void OnPresenceEvent(PresenceEvent @event)
         {
             string str = string.Format("OnPresenceEvent: type:{0} channelType:{1} channelName:{2} publisher:{3} states:{4} snapshot:{5}" + $" count:{@event.stateItems.Length} ",
@@ -389,6 +446,10 @@ namespace Agora.Spaces.Controller
             }
         }
 
+        /// <summary>
+        ///   A handler that respond to the user state list
+        /// </summary>
+        /// <param name="userStates"></param>
         void HandleUserStateList(UserState[] userStates)
         {
             foreach (var user in userStates)
@@ -407,6 +468,10 @@ namespace Agora.Spaces.Controller
             }
         }
 
+        /// <summary>
+        ///   The Storage event callback
+        /// </summary>
+        /// <param name="event"></param>
         void OnStorageEvent(StorageEvent @event)
         {
             string str = string.Format("OnStorageEvent: channelType:{0} storageType:{1} eventType:{2} target:{3}",
@@ -417,18 +482,32 @@ namespace Agora.Spaces.Controller
             }
         }
 
+        /// <summary>
+        ///   Topic event callback
+        /// </summary>
+        /// <param name="event"></param>
         void OnTopicEvent(TopicEvent @event)
         {
             string str = string.Format("OnTopicEvent: channelName:{0} publisher:{1}", @event.channelName, @event.publisher);
             Debug.Log(str);
         }
 
+        /// <summary>
+        ///  Handling connection states
+        /// </summary>
+        /// <param name="channelName"></param>
+        /// <param name="state"></param>
+        /// <param name="reason"></param>
         void OnConnectionStateChanged(string channelName, RTM_CONNECTION_STATE state, RTM_CONNECTION_CHANGE_REASON reason)
         {
             string str = string.Format("OnConnectionStateChange channelName {0}: state:{1} reason:{2}", channelName, state, reason);
             Debug.Log(str);
         }
 
+        /// <summary>
+        ///   Handle token expiration.  
+        /// </summary>
+        /// <param name="channelName"></param>
         void OnTokenPrivilegeWillExpire(string channelName)
         {
             string str = string.Format("OnTokenPrivilegeWillExpire channelName {0}", channelName);
@@ -436,7 +515,10 @@ namespace Agora.Spaces.Controller
 
         }
         #endregion
-
+        /// <summary>
+        ///    Get the state of the presence
+        /// </summary>
+        /// <param name="player"></param>
         async void GetState(string player)
         {
             RTM_CHANNEL_TYPE channelType = RTM_CHANNEL_TYPE.STREAM;
@@ -468,6 +550,10 @@ namespace Agora.Spaces.Controller
             }
         }
 
+        /// <summary>
+        ///   The the users from the Presence.  
+        /// </summary>
+        /// <param name="processUsers">Handler to process the user info</param>
         async void GetPresenceUser(System.Action<UserState[]> processUsers)
         {
             GetOnlineUsersOptions options = new GetOnlineUsersOptions()

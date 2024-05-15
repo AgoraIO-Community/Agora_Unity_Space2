@@ -6,7 +6,7 @@ using UnityEditor.SceneManagement;
 namespace Agora.Demo
 {
     /// <summary>
-    /// First Scene Auto Loader
+    /// First Scene Auto Loader for the Editor.  
     /// </summary>
     /// <description>
     /// Based on an idea on this thread:

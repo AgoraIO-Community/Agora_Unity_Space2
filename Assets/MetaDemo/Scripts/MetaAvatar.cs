@@ -10,10 +10,10 @@ namespace Agora.Spaces
         [SerializeField]
         GameObject ViewEntity;
 
-        public event System.Action OnPlayerPositionChanged;
-
+        // UID of the user asssociated with this avatar
         private uint _uid;
 
+        // the controller interface
         private IRTCController _rtc;
 
         // Start is called before the first frame update
@@ -22,7 +22,12 @@ namespace Agora.Spaces
             ViewEntity.SetActive(false);
         }
 
-        // Update is called once per frame
+        /// <summary>
+        ///   Initialize the MetaAvatar instance with offline handler
+        /// </summary>
+        /// <param name="uid">local user's uid</param>
+        /// <param name="rtc">rtc controller instance</param>
+        /// <param name="enableVideo">using webcam video or not</param>
         public void Init(uint uid, IRTCController rtc, bool enableVideo = true)
         {
             _uid = uid;
@@ -35,6 +40,9 @@ namespace Agora.Spaces
             }
         }
 
+        /// <summary>
+        ///  Enable the video stream display on the video surface component 
+        /// </summary>
         void EnableVideoDisplay()
         {
             var videosurface = ViewEntity.GetComponent<VideoSurface>();
@@ -54,6 +62,10 @@ namespace Agora.Spaces
             videosurface.SetEnable(true);
         }
 
+        /// <summary>
+        ///  Clean up if the user goes offline
+        /// </summary>
+        /// <param name="offline_uid"></param>
         void HandleOffline(uint offline_uid)
         {
             if (_rtc != null)
