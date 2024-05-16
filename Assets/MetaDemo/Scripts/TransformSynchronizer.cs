@@ -10,7 +10,7 @@ public class TransformSynchronizer : MonoBehaviour
 {
     public System.Action<string, Transform> SyncTransform;
     public string UserID { get; set; }
-
+    public int updates = 0;
     Vector3 _position, _scale, _angle;
     // Start is called before the first frame update
     void Start()
@@ -31,6 +31,7 @@ public class TransformSynchronizer : MonoBehaviour
             _scale = transform.localScale;
             _angle = transform.eulerAngles;
             SyncTransform?.Invoke(UserID, transform);
+            updates++;
         }
     }
 }

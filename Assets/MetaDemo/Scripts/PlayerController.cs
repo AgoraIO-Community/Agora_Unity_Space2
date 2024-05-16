@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Agora.Demo.Meta
+namespace Agora.Spaces.Controller
 {
     [RequireComponent(typeof(CapsuleCollider))]
     [RequireComponent(typeof(CharacterController))]

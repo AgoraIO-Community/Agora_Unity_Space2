@@ -1,39 +1,48 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using Agora.Demo.Meta.Model;
 
-namespace Agora.Demo.Meta.Controller
+namespace Agora.Spaces.Controller
 {
+    /// <summary>
+    ///   The MetaGameController takes care of life cycles of the players as 
+    /// objects in the scene.
+    /// </summary>
     public class MetaGameController : MonoBehaviour
     {
         [SerializeField]
         GameObject AvatarPrefab;
+
         [SerializeField]
         Transform UsersRoot;
 
-        public PlayerSyncManager SyncManager { get; private set; }
+        internal PlayerSyncManager SyncManager { get; private set; }
 
-        MetaRTMController _rtmController;
+        internal MetaRTMController _rtmController;
+        internal MetaRTCController _rtcController;
 
         private float SyncFrequence = 0.5f; // half second
 
         const float YPos = 1f;
 
-        Transform _myAvatar;
+        Transform _myAvatarTransform;
         bool _exitSelfStateSync = false;
-        string EnvNameExtension = "";
+        Vector3 _myInitPosition = Vector3.zero;
 
         HashSet<string> SubscribeGroup = new HashSet<string>();
 
+        // mapping username to the created avatar 
+        internal Dictionary<string, MetaAvatar> AvatarDict = new Dictionary<string, MetaAvatar>();
+
         private void Awake()
         {
-            EnvNameExtension = Environment.GetEnvironmentVariable("DEMONUM");
-            Debug.Log("EnvNameExtension = " + EnvNameExtension);
             SyncManager = new PlayerSyncManager();
             _rtmController = GetComponent<MetaRTMController>();
+            _rtcController = GetComponent<MetaRTCController>();
+            _rtcController.OnRemoteUserJoinedNotify += BindAvatarWithRTCInfo;
+            _rtcController.OnJoinedChannelNotify += BindMyAvatarToRTC;
         }
 
         private void Start()
@@ -42,12 +51,13 @@ namespace Agora.Demo.Meta.Controller
             _rtmController.OnLoginComplete += () =>
             {
                 _exitSelfStateSync = false;
-                SpawnAvatar(GetUserName(), true);
+                SpawnAvatar(GameApplication.Instance.UserName, true);
                 StartCoroutine(nameof(CoSyncLocalStateTick));
             };
             _rtmController.OnJoinStreamChannel += () =>
             {
                 SendTransformData();
+                _rtcController.JoinChannel(GameApplication.Instance.RTCChannelName, GameApplication.Instance.UserName, _myInitPosition);
             };
             _rtmController.OnLeaveStreamChannel += () =>
             {
@@ -61,14 +71,17 @@ namespace Agora.Demo.Meta.Controller
             };
         }
 
-        public string GetUserName()
+        private void OnDestroy()
         {
-            return Application.platform.ToString() + EnvNameExtension;
+            _rtcController.OnRemoteUserJoinedNotify -= BindAvatarWithRTCInfo;
+
+            _rtcController.DeInit();
+            _rtmController.DeInit();
         }
 
         internal string GetLogName()
         {
-            return "rtm_" + GetUserName() + ".log";
+            return "rtm_" + GameApplication.Instance.UserName + ".log";
         }
 
         Vector3 GetSpawnPosition()
@@ -78,6 +91,21 @@ namespace Agora.Demo.Meta.Controller
             return new Vector3(randXY.x * 5, YPos, randXY.y);
         }
 
+        void EnableCameraFollow(bool enable, Transform trans)
+        {
+            FollowCharacter follow = Camera.main.GetComponent<FollowCharacter>();
+            if (follow == null) return;
+            if (enable)
+            {
+                follow.character = trans;
+            }
+            else
+            {
+                follow.character = null;
+            }
+        }
+
+
         public bool HasPlayer(string name)
         {
             return SyncManager.HasPlayer(name);
@@ -86,7 +114,7 @@ namespace Agora.Demo.Meta.Controller
         /// <summary>
         ///    Spawn avatar to a 3d location 
         /// </summary>
-        /// <param name="name">User name</param>
+        /// <param name="name">User name from RTM callback</param>
         /// <param name="num">The number of people in game</param>
         public void SpawnAvatar(string name, bool owned = false, string json = null)
         {
@@ -94,13 +122,14 @@ namespace Agora.Demo.Meta.Controller
             Vector3 pos = GetSpawnPosition();
             GameObject ava = Instantiate(AvatarPrefab, pos, Quaternion.identity, UsersRoot);
             ava.name = name;
-
             if (owned)
             {
+                _myInitPosition = pos;
                 var sync = ava.AddComponent<TransformSynchronizer>();
                 ava.AddComponent<PlayerController>();
                 sync.UserID = name;
-                _myAvatar = ava.transform;
+                _myAvatarTransform = ava.transform;
+                EnableCameraFollow(true, _myAvatarTransform);
             }
             else
             {
@@ -111,6 +140,13 @@ namespace Agora.Demo.Meta.Controller
                 ava.transform.localRotation = Quaternion.Euler(tdata.EulerAngles);
                 ValidateScriptions(name, tdata);
             }
+
+            var tar = ava.GetComponent<MetaAvatar>();
+            // Although by common sense we want to init this component at creation
+            // dependency on a valid uid requires the RTC connection has been validated
+            // and bound to a UID
+            // tar.Init(uid, _rtcController, GameApplication.Instance.EnableVideo);
+            AvatarDict[name] = tar;
 
             // label the name
             Transform label = ava.transform.Find("Canvas/NameLabel");
@@ -126,6 +162,28 @@ namespace Agora.Demo.Meta.Controller
                 text.text = name;
             }
             SyncManager.AddPlayerTransform(name, ava.transform, owned);
+        }
+
+        void BindAvatarWithRTCInfo(string username, uint uid)
+        {
+            if (AvatarDict.ContainsKey(username))
+            {
+                var tar = AvatarDict[username];
+                tar.Init(uid, _rtcController, GameApplication.Instance.EnableVideo);
+            }
+            else
+            {
+                Debug.LogWarning($"BindAvatarWithRTCInfo, user {username} not found!");
+            }
+        }
+
+        void BindMyAvatarToRTC(uint uid)
+        {
+            if (GameApplication.Instance.EnableVideo)
+            {
+                var tar = _myAvatarTransform.GetComponent<MetaAvatar>();
+                tar.Init(0, _rtcController, true);
+            }
         }
 
         IEnumerator CoSyncLocalStateTick()
@@ -145,11 +203,11 @@ namespace Agora.Demo.Meta.Controller
 
         internal void SendTransformData()
         {
-            if (_myAvatar != null)
+            if (_myAvatarTransform != null)
             {
-                TransformData transformData = new TransformData(_myAvatar)
+                TransformData transformData = new TransformData(_myAvatarTransform)
                 {
-                    UserId = GetUserName()
+                    UserId = GameApplication.Instance.UserName
                 };
                 string json = transformData.ToJSON();
                 //Debug.Log("CoSyncStateTick:" + json);
@@ -196,6 +254,7 @@ namespace Agora.Demo.Meta.Controller
         }
 
         #region TESTCODE
+#if TESTING
         void OnGUI()
         {
             GUILayout.Space(8);
@@ -227,6 +286,7 @@ namespace Agora.Demo.Meta.Controller
             TransformData data = new TransformData(game.transform) { UserId = "Sample" };
             return data;
         }
+#endif
         #endregion
     }
 }

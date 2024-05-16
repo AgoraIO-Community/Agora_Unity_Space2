@@ -2,15 +2,21 @@ using System.Collections.Generic;
 using UnityEngine;
 using Agora.Demo.Meta.Model;
 
-namespace Agora.Demo.Meta.Controller
+namespace Agora.Spaces.Controller
 {
-
+    /// <summary>
+    ///   The PlayerSyncManager keeps track of the user transform data, publish 
+    /// local positions, and update remote positions.
+    /// </summary>
     public class PlayerSyncManager
     {
+        // A dictionary to quickly get the transform of a user's avatar
         Dictionary<string, Transform> AvatarMap = new Dictionary<string, Transform>();
+
+        // The Encoder/Decoder of the TransformData type
         DataCodec<TransformData> TdataCodec = new DataCodec<TransformData>();
 
-
+        // External caller to add the player transform to the dictionary
         public void AddPlayerTransform(string userId, Transform player, bool owned)
         {
             Debug.Log($"PlayerSyncManager adding {userId} owned:{owned}");
@@ -22,11 +28,13 @@ namespace Agora.Demo.Meta.Controller
             }
         }
 
-        public bool HasPlayer(string name)
+        // Check if  the userId exists
+        public bool HasPlayer(string userId)
         {
-            return AvatarMap.ContainsKey(name);
+            return AvatarMap.ContainsKey(userId);
         }
 
+        // Remove the player from the dictionary
         public void RemovePlayer(string userId)
         {
             if (AvatarMap.ContainsKey(userId))
@@ -36,6 +44,7 @@ namespace Agora.Demo.Meta.Controller
             }
         }
 
+        // Clear the dictionary
         public void ClearPlayers()
         {
             AvatarMap.Clear();
@@ -45,10 +54,12 @@ namespace Agora.Demo.Meta.Controller
         public void UpdateTransform(string userID, Transform me)
         {
             TransformData transformData = new TransformData(me) { UserId = userID };
-            // byte[] bytes = TdataCodec.Encode(transformData);
-            // send this to the topic
-            // MetaRTMController.Instance.PublishTransformSync(bytes);
             MetaRTMController.Instance.PublishTransformSync(transformData.ToJSON());
+
+            // The alternate way is to send the data as binary data, not neccessary more efficient than JSON
+            // Keeping here for reference.
+            // byte[] bytes = TdataCodec.Encode(transformData);
+            // MetaRTMController.Instance.PublishTransformSync(bytes);
         }
 
         // driven by data received from server

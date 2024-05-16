@@ -1,26 +1,35 @@
-using io.agora.rtm.demo;
 using Agora.Rtm;
 using UnityEngine;
 using System.Threading.Tasks;
 
-namespace Agora.Demo.Meta.Controller
+namespace Agora.Spaces.Controller
 {
+    /// <summary>
+    ///   The MetaRTMController controls functionalities using the Signal SDK.
+    /// It does not work on any game logics.
+    /// </summary>
     public class MetaRTMController : MonoBehaviour
     {
         IRtmClient _rtmClient = null;
         IStreamChannel _streamChannel = null;
         IRtmPresence _presence = null;
 
-        public AppIdInput InfoInput;
         public uint PresenceTimeout = 1;
 
         public string TransformTopic = "TransformData";
         public static MetaRTMController Instance;
 
+        /// <summary>
+        ///   Remembers whether the Transform topic is joined
+        /// </summary>
         bool _inTransformSyncTopic = false;
+
         string UserID;
+        string ChannelName;
 
         MetaGameController GameController;
+
+        /* Event handlers */
         public event System.Action OnLoginComplete;
         public event System.Action OnJoinStreamChannel;
         public event System.Action OnLeaveStreamChannel;
@@ -38,24 +47,42 @@ namespace Agora.Demo.Meta.Controller
 
         private void OnDestroy()
         {
-            LeaveStreamChannel();
-            ReleaseStreamChannel();
-            LogoutAsync();
-            _rtmClient.Dispose();
+            DeInit();
         }
 
+        /// <summary>
+        ///   Destructor
+        /// </summary>
+        internal void DeInit()
+        {
+            if (_rtmClient != null)
+            {
+                LeaveStreamChannel();
+                ReleaseStreamChannel();
+                LogoutAsync();
+                _rtmClient.Dispose();
+                _rtmClient = null;
+            }
+        }
+
+        /// <summary>
+        ///  The InitClient method controls the start of rtmClient; it will
+        /// join the stream channel for transform sync in this step.
+        /// </summary>
+        /// <param name="game"></param>
         public async void InitClient(MetaGameController game)
         {
             GameController = game;
-            UserID = GameController.GetUserName();
+            UserID = GameApplication.Instance.UserName;
+            ChannelName = GameApplication.Instance.RTMChannelName;
 
             RtmConfig config = new RtmConfig();
-            config.appId = InfoInput.appID;
+            config.appId = GameApplication.Instance.AppInfoInput.appID;
             config.userId = UserID;
             config.presenceTimeout = PresenceTimeout;
             config.useStringUserId = true;
             config.logConfig = new RtmLogConfig() { filePath = Application.persistentDataPath + "/" + GameController.GetLogName() };
-            Debug.LogWarning("Log path:" + config.logConfig.filePath);
+            Debug.Log("Log path:" + config.logConfig.filePath);
 
             IRtmClient rtmClient = null;
             try
@@ -82,7 +109,7 @@ namespace Agora.Demo.Meta.Controller
                 _rtmClient = rtmClient;
                 _presence = _rtmClient.GetPresence();
                 await LoginAsync();
-                InitStreamChannel(InfoInput.channelName);
+                InitStreamChannel(ChannelName);
             }
         }
 
@@ -92,14 +119,19 @@ namespace Agora.Demo.Meta.Controller
             _streamChannel = _rtmClient.CreateStreamChannel(channel);
             JoinStreamChannel();
         }
+
+        /// <summary>
+        ///   Join a stream channel with options and handle errors. 
+        /// Invoke JoinTopic next.
+        /// </summary>
         async void JoinStreamChannel()
         {
             if (this._streamChannel == null)
             {
                 return;
             }
-
-            string token = InfoInput.token == "" ? InfoInput.appID : InfoInput.token;
+            var infoInput = GameApplication.Instance.AppInfoInput;
+            string token = infoInput.rtmToken == "" ? infoInput.appID : infoInput.rtmToken;
             JoinChannelOptions joptions = new JoinChannelOptions()
             {
                 token = token,
@@ -124,6 +156,10 @@ namespace Agora.Demo.Meta.Controller
             JoinTopic(TransformTopic);
         }
 
+        /// <summary>
+        ///    Join a topic.
+        /// </summary>
+        /// <param name="topic"></param>
         public async void JoinTopic(string topic)
         {
             JoinTopicOptions toptions = new JoinTopicOptions()
@@ -152,6 +188,10 @@ namespace Agora.Demo.Meta.Controller
             }
         }
 
+        /// <summary>
+        ///  Leave a topic
+        /// </summary>
+        /// <param name="topic"></param>
         public async void LeaveTopic(string topic)
         {
             var result = await _streamChannel.LeaveTopicAsync(topic);
@@ -171,6 +211,11 @@ namespace Agora.Demo.Meta.Controller
         }
 
 
+        /// <summary>
+        ///   Subscribe a topic
+        /// </summary>
+        /// <param name="topic"></param>
+        /// <param name="users"></param>
         public async void SubscribeTopic(string topic, string[] users)
         {
             TopicOptions options = new TopicOptions(users);
@@ -196,14 +241,21 @@ namespace Agora.Demo.Meta.Controller
             }
         }
 
+        /// <summary>
+        ///   Publish the transfrom data by setting a state on Presence.
+        /// </summary>
+        /// <param name="json">JSON string of a serialized structure.</param>
         public async void PublishTransformState(string json)
         {
             StateItem posItem = new StateItem { key = "TransformData", value = json };
-            await _presence?.SetStateAsync(InfoInput.channelName, RTM_CHANNEL_TYPE.STREAM,
+            await _presence?.SetStateAsync(ChannelName, RTM_CHANNEL_TYPE.STREAM,
                 new StateItem[] { posItem }
             );
         }
 
+        /// <summary>
+        ///   LeaveStreamChannel
+        /// </summary>
         public async void LeaveStreamChannel()
         {
             if (_streamChannel == null)
@@ -229,13 +281,19 @@ namespace Agora.Demo.Meta.Controller
             LeaveTopic(TransformTopic);
         }
 
+        /// <summary>
+        ///    Release Stream Channel
+        /// </summary>
         void ReleaseStreamChannel()
         {
             _streamChannel.Dispose();
             _streamChannel = null;
         }
 
-
+        /// <summary>
+        ///    Publish transform data by posting 
+        /// </summary>
+        /// <param name="data"></param>
         public async void PublishTransformSync(byte[] data)
         {
             if (_inTransformSyncTopic)
@@ -254,6 +312,10 @@ namespace Agora.Demo.Meta.Controller
             }
         }
 
+        /// <summary>
+        ///   Publish the transfrom data by setting a state on Presence.
+        /// </summary>
+        /// <param name="json"></param>
         public async void PublishTransformSync(string json)
         {
             if (_inTransformSyncTopic)
@@ -263,7 +325,7 @@ namespace Agora.Demo.Meta.Controller
                 var result = await _streamChannel.PublishTopicMessageAsync(TransformTopic, json, options);
                 if (result.Status.Error)
                 {
-                    Debug.LogError("Login failed, error = " + result.Status.Reason);
+                    Debug.LogError("Publish topic message failed, error = " + result.Status.Reason);
                 }
                 else
                 {
@@ -272,10 +334,15 @@ namespace Agora.Demo.Meta.Controller
             }
         }
 
+        /// <summary>
+        ///   Login the the RTM Client
+        /// </summary>
+        /// <returns></returns>
         async Task<RtmStatus> LoginAsync()
         {
             // assume test mode AppID for empty token. In this case, AppID is the token.
-            string token = string.IsNullOrEmpty(InfoInput.token) ? InfoInput.appID : InfoInput.token;
+            var infoInput = GameApplication.Instance.AppInfoInput;
+            string token = infoInput.rtmToken == "" ? infoInput.appID : infoInput.rtmToken;
             var result = await _rtmClient.LoginAsync(token);
 
             if (result.Status.Error)
@@ -290,6 +357,9 @@ namespace Agora.Demo.Meta.Controller
             return result.Status;
         }
 
+        /// <summary>
+        ///   Logout the RTM Client
+        /// </summary>
         async void LogoutAsync()
         {
             var result = await _rtmClient.LogoutAsync();
@@ -301,13 +371,17 @@ namespace Agora.Demo.Meta.Controller
         }
 
         #region --- RTM Event Handlers ---
+        /// <summary>
+        ///    A stream message is received.
+        /// </summary>
+        /// <param name="event"></param>
         void OnMessageEvent(MessageEvent @event)
         {
             string str = string.Format("OnMessageEvent channelName:{0} channelTopic:{1} channelType:{2} publisher:{3} message:{4} customType:{5}",
               @event.channelName, @event.channelTopic, @event.channelType, @event.publisher, @event.message.GetData<string>(), @event.customType);
             //            Debug.Log(str);
 
-            if (@event.channelName == InfoInput.channelName && @event.channelTopic == TransformTopic)
+            if (@event.channelName == ChannelName && @event.channelTopic == TransformTopic)
             {
                 if (@event.customType == "binary")
                 {
@@ -322,6 +396,10 @@ namespace Agora.Demo.Meta.Controller
             }
         }
 
+        /// <summary>
+        ///   This is the core logic that does the bookkeeping of remote users
+        /// </summary>
+        /// <param name="event"></param>
         void OnPresenceEvent(PresenceEvent @event)
         {
             string str = string.Format("OnPresenceEvent: type:{0} channelType:{1} channelName:{2} publisher:{3} states:{4} snapshot:{5}" + $" count:{@event.stateItems.Length} ",
@@ -331,7 +409,7 @@ namespace Agora.Demo.Meta.Controller
             switch (@event.type)
             {
                 case RTM_PRESENCE_EVENT_TYPE.REMOTE_JOIN:
-                    if (@event.channelName == InfoInput.channelName)
+                    if (@event.channelName == ChannelName)
                     {
                         // subscribe to the newly added user. Original group didn't include them
                         // SubscribeTopic(TransformTopic);
@@ -368,6 +446,10 @@ namespace Agora.Demo.Meta.Controller
             }
         }
 
+        /// <summary>
+        ///   A handler that respond to the user state list
+        /// </summary>
+        /// <param name="userStates"></param>
         void HandleUserStateList(UserState[] userStates)
         {
             foreach (var user in userStates)
@@ -386,6 +468,10 @@ namespace Agora.Demo.Meta.Controller
             }
         }
 
+        /// <summary>
+        ///   The Storage event callback
+        /// </summary>
+        /// <param name="event"></param>
         void OnStorageEvent(StorageEvent @event)
         {
             string str = string.Format("OnStorageEvent: channelType:{0} storageType:{1} eventType:{2} target:{3}",
@@ -396,18 +482,32 @@ namespace Agora.Demo.Meta.Controller
             }
         }
 
+        /// <summary>
+        ///   Topic event callback
+        /// </summary>
+        /// <param name="event"></param>
         void OnTopicEvent(TopicEvent @event)
         {
             string str = string.Format("OnTopicEvent: channelName:{0} publisher:{1}", @event.channelName, @event.publisher);
-            Debug.LogWarning(str);
+            Debug.Log(str);
         }
 
+        /// <summary>
+        ///  Handling connection states
+        /// </summary>
+        /// <param name="channelName"></param>
+        /// <param name="state"></param>
+        /// <param name="reason"></param>
         void OnConnectionStateChanged(string channelName, RTM_CONNECTION_STATE state, RTM_CONNECTION_CHANGE_REASON reason)
         {
             string str = string.Format("OnConnectionStateChange channelName {0}: state:{1} reason:{2}", channelName, state, reason);
             Debug.Log(str);
         }
 
+        /// <summary>
+        ///   Handle token expiration.  
+        /// </summary>
+        /// <param name="channelName"></param>
         void OnTokenPrivilegeWillExpire(string channelName)
         {
             string str = string.Format("OnTokenPrivilegeWillExpire channelName {0}", channelName);
@@ -415,13 +515,16 @@ namespace Agora.Demo.Meta.Controller
 
         }
         #endregion
-
+        /// <summary>
+        ///    Get the state of the presence
+        /// </summary>
+        /// <param name="player"></param>
         async void GetState(string player)
         {
             RTM_CHANNEL_TYPE channelType = RTM_CHANNEL_TYPE.STREAM;
 
 
-            var result = await _presence.GetStateAsync(InfoInput.channelName, channelType, player);
+            var result = await _presence.GetStateAsync(ChannelName, channelType, player);
             if (result.Status.Error)
             {
                 Debug.LogError(string.Format("GetState Status.ErrorCode:{0} ", result.Status.ErrorCode));
@@ -447,15 +550,19 @@ namespace Agora.Demo.Meta.Controller
             }
         }
 
+        /// <summary>
+        ///   The the users from the Presence.  
+        /// </summary>
+        /// <param name="processUsers">Handler to process the user info</param>
         async void GetPresenceUser(System.Action<UserState[]> processUsers)
         {
-            PresenceOptions options = new PresenceOptions()
+            GetOnlineUsersOptions options = new GetOnlineUsersOptions()
             {
                 includeUserId = true,
                 includeState = true,
             };
 
-            var result = await _presence.WhoNowAsync(InfoInput.channelName, RTM_CHANNEL_TYPE.STREAM, options);
+            var result = await _presence.GetOnlineUsersAsync(ChannelName, RTM_CHANNEL_TYPE.STREAM, options);
             if (result.Status.Error)
             {
                 Debug.LogError(string.Format("WhoNow Status.ErrorCode:{0} ", result.Status.ErrorCode));
