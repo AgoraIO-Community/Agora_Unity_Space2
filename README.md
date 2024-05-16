@@ -9,7 +9,8 @@ https://github.com/icywind/Agora_Unity_Space2/assets/1261195/c054abc8-6289-4f83-
 ## Developer Environment Prerequisites
 - Unity3d 2021.3 LTS
 - Agora Developer Account
-- Agora Signaling SDK ([version 2.1.9](https://download.agora.io/sdk/release/Agora_Unity_RTM_SDK_v2.1.9.zip) or newer)
+- Agora Video SDK (Version 4.3.1 or newer)
+- Agora Signaling SDK (version 2.1.9 or newer)
 	
 ## Quick Start
 
